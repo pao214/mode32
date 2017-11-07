@@ -64,7 +64,6 @@ uint8_t* cache_alloc(size_t type)
 }
 
 /***
-** TODO: Change addressing to account for 64 bit
 ** Adds buf to free list and frees slab if not required
 ** @param type of object
 ** @param buf to be freed 

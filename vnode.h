@@ -2,8 +2,6 @@
 #define VNODE_H
 
 /***
-** TODO: remove unwanted API
-** TODO: remove unwanted data
 ** wrapper template class to help with linear linked list
 ** store head to store list
 ***/
