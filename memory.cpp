@@ -13,6 +13,7 @@ void mem_init()
     {
         cps[i].type = i;
         cps[i].size = prnts[i].num_bytes32;
+        assert(cps[i].size>=2);
         cps[i].slab_maxbuf = (PAGE_SZ-sizeof(slab_t))/(cps[i].size);
         cps[i].slabs = NULL;
         cps[i].slabs_back = NULL;
@@ -217,17 +218,18 @@ void freebuf(size_t type)
         do
         {
             uint8_t* buf = p->free_list;
+            uint8_t* mem = (uint8_t*)p-PAGE_SZ+sizeof(slab_t);
 
             // TODO: Stores list in reverse
             for (int i = 0; i < ((ncps[i].slab_maxbuf)-(p->bufcount)); i++)
             {
-                if ((buf-memory)==MEM_SZ64)
+                if ((buf-mem)==PAGE_SZ)
                 {
                     break;
                 }
 
                 cache_free(type, conv64(type, buf));
-                buf = memory+(*(uint32_t*)buf);
+                buf = mem+(*(uint16_t*)buf);
             }
 
             p = p->next;

@@ -18,10 +18,10 @@ void cache_grow(cache_t* cp)
     // Lastbuf does not point to NULL
     for (uint8_t* p = mem; p < lastbuf; p += (cp->size))
     {
-        *((uint32_t*)p) = (uint32_t)((p-memory)+(cp->size));
+        *((uint16_t*)p) = (uint16_t)((p-mem)+(cp->size));
     }
 
-    *((uint32_t*)lastbuf) = MEM_SZ64;
+    *((uint16_t*)lastbuf) = PAGE_SZ;
 
     // Add slab to list
     __slab_move_to_front(cp, slab);
@@ -49,8 +49,9 @@ uint8_t* cache_alloc(size_t type)
 
     // Remove from free list
     slab_t* slab = cp->slabs;
+    uint8_t* mem = (uint8_t*)slab-PAGE_SZ+sizeof(slab_t);
     uint8_t* buf = slab->free_list;
-    slab->free_list = memory+(*((uint32_t*)buf));
+    slab->free_list = mem+(*((uint16_t*)buf));
     (slab->bufcount)++;
 
     // Front slab must not be full if possible
@@ -75,7 +76,7 @@ void cache_free(size_t type, uint8_t* buf)
     slab_t* slab = (slab_t*)(mem+PAGE_SZ-sizeof(slab_t));
 
     // Add buffer to free list
-    *((uint32_t*)buf) = (uint32_t)((slab->free_list)-memory);
+    *((uint16_t*)buf) = (uint16_t)((slab->free_list)-mem);
     slab->free_list = buf;
     (slab->bufcount)--;
 
