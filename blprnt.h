@@ -5,12 +5,12 @@
 #include <cstddef>
 
 /***
-** @field num_indirs is number of indirections to data
+** @field prim_sz is size of primitive data or 0 if pointer
 ** @field type is type of struct stored
 **/
 struct field_t
 {
-    size_t num_indirs;
+    size_t prim_sz;
     size_t type;
 };
 

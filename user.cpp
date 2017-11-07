@@ -16,7 +16,7 @@ void prnts_init()
     prnts[0].num_bytes64 = sizeof(uint64_t);
 
     field_t lfield;
-    lfield.num_indirs = 1;
+    lfield.prim_sz = 0;
     lfield.type = 0;
 
     prnts[0].fields = NULL;

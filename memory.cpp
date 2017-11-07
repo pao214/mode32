@@ -7,7 +7,7 @@
 void mem_init()
 {
     page_init();
-    cps = (cache_t*)malloc(sizeof(cache_t)*num_nodes);
+    cps = (cache_t*)malloc(sizeof(cache_t)*num_prnts);
 
     for (size_t i = 0; i < num_prnts; i++)
     {
@@ -17,18 +17,8 @@ void mem_init()
         cps[i].slabs = NULL;
         cps[i].slabs_back = NULL;
     }
-
-    cps[num_prnts].type = num_nodes;
-    cps[num_prnts].size = sizeof(uint32_t);
-    cps[num_prnts].slab_maxbuf = (PAGE_SZ-sizeof(slab_t))/sizeof(uint32_t);
-    cps[num_prnts].slabs = NULL;
-    cps[num_prnts].slabs_back = NULL;
 }
 
-void reloc(size_t type);
-void objcpy(size_t type);
-void freebuf(size_t type);
-uint8_t* conv64(size_t type, uint8_t* paddr);
 cache_t* ncps;
 
 /***
@@ -42,9 +32,9 @@ cache_t* ncps;
 void swtch()
 {
     // Store old cps
-    ncps = (cache_t*)malloc(sizeof(cache_t)*num_nodes);
+    ncps = (cache_t*)malloc(sizeof(cache_t)*num_prnts);
 
-    for (int i = 0; i < num_nodes; i++)
+    for (int i = 0; i < num_prnts; i++)
     {
         ncps[i] = cps[i];
     }
@@ -58,13 +48,8 @@ void swtch()
         cps[i].slabs_back = NULL;
     }
 
-    cps[num_prnts].size = sizeof(uint64_t);
-    cps[num_prnts].slab_maxbuf = (PAGE_SZ-sizeof(slab_t))/sizeof(uint64_t);
-    cps[num_prnts].slabs = NULL;
-    cps[num_prnts].slabs_back = NULL;
-
     // Relocate memory
-    for (size_t i = 0; i < num_nodes; i++)
+    for (size_t i = 0; i < num_prnts; i++)
     {
         reloc(i);
     }
@@ -72,19 +57,19 @@ void swtch()
     addrs[0] = conv64(0, addrs[0]);
 
     // Object copy
-    for (size_t i = 0; i < num_nodes; i++)
+    for (size_t i = 0; i < num_prnts; i++)
     {
         objcpy(i);
     }
 
     // Free buffers
-    for (size_t i = 0; i < num_nodes; i++)
+    for (size_t i = 0; i < num_prnts; i++)
     {
         freebuf(i);
     }
 
     // Free old memory
-    for (size_t i = 0; i < num_nodes; i++)
+    for (size_t i = 0; i < num_prnts; i++)
     {
         cache_destroy(&ncps[i]);
     }
@@ -147,7 +132,8 @@ void objcpy(size_t type)
     {
         field_t& lfield = fnode->val;
 
-        if (lfield.num_indirs)
+        // Pointer
+        if (!lfield.prim_sz)
         {
             slab_t* slab = ncps[type].slabs;
 
@@ -159,7 +145,6 @@ void objcpy(size_t type)
                 {
                     uint8_t* mem = ((uint8_t*)p)-PAGE_SZ+sizeof(slab_t);
                 
-                    // TODO: if num_indirs more than 1
                     for (int i = 0; i < (ncps[type].slab_maxbuf); i++)
                     {
                         uint8_t* pbase = mem+i*(ncps[type].size);
@@ -180,7 +165,7 @@ void objcpy(size_t type)
             offset32 += sizeof(uint32_t);
             offset64 += sizeof(uint64_t);
         }
-        // Must be a primitive type
+        // Primitive type
         else
         {
             size_t ltype = lfield.type;

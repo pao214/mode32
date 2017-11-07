@@ -3,23 +3,16 @@
 void prnt_grph();
 
 /***
-** Constructs a point to graph to help with relocating memory
+** Constructs a reverse point to graph to help with relocating memory
 ***/
 void graph_init()
 {
-    num_nodes = num_prnts+1;
-    graph = (vnode_t<size_t>**)malloc(sizeof(vnode_t<size_t>*)*num_nodes);
+    graph = (vnode_t<size_t>**)malloc(sizeof(vnode_t<size_t>*)*num_prnts);
 
     // Initialize empty graph
-    for (size_t i = 0; i < num_nodes; i++)
-    {
-        graph[i] = NULL;
-    }
-
-    // Add edges from last node
     for (size_t i = 0; i < num_prnts; i++)
     {
-        graph[num_prnts] = vnode_distinct_insert<size_t>(graph[num_prnts], i);
+        graph[i] = NULL;
     }
 
     // Add edges given the fields
@@ -31,13 +24,13 @@ void graph_init()
         while (lvnode)
         {
             field_t& lfield = lvnode->val;
-            size_t lnum_indirs = lfield.num_indirs;
+            size_t lprim_sz = lfield.prim_sz;
 
             // Add edge for a pointer
-            if (lnum_indirs)
+            if (!lprim_sz)
             {
-                size_t ltype = (lnum_indirs>1) ? num_prnts : (lfield.type);
-                graph[i] = vnode_distinct_insert<size_t>(graph[i], ltype);
+                size_t ltype = lfield.type;
+                graph[ltype] = vnode_distinct_insert<size_t>(graph[ltype], i);
             }
 
             lvnode = lvnode->next;
@@ -52,7 +45,7 @@ void graph_init()
 ***/
 void prnt_grph()
 {
-    for (size_t i = 0; i < num_nodes; i++)
+    for (size_t i = 0; i < num_prnts; i++)
     {
         fprintf(stderr, "%ld:", i);
 

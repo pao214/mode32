@@ -93,7 +93,8 @@ void cache_free(size_t type, uint8_t* buf)
     }
 }
 
-void cache_destroy(cache_t* cp) {
+void cache_destroy(cache_t* cp) 
+{
     slab_t* slab;
     uint8_t* mem;
 

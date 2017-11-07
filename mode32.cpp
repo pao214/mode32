@@ -3,7 +3,6 @@
 size_t num_prnts;
 blprnt_t* prnts;
 
-size_t num_nodes;
 vnode_t<size_t>** graph;
 
 uint8_t* memory;
