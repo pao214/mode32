@@ -14,6 +14,7 @@ void mem_init()
         cps[i].type = i;
         cps[i].size = prnts[i].num_bytes32;
         assert(cps[i].size>=2);
+        assert(cps[i].size<PAGE_SZ/8);
         cps[i].slab_maxbuf = (PAGE_SZ-sizeof(slab_t))/(cps[i].size);
         cps[i].slabs = NULL;
         cps[i].slabs_back = NULL;
@@ -246,6 +247,8 @@ void freebuf(size_t type)
 ***/
 uint8_t* conv64(size_t type, uint8_t* paddr)
 {
+    assert(paddr>=memory);
+    assert(paddr<(memory+MEM_SZ64));
     assert(eqtype(type, paddr));
     uint8_t* mem32 = memory+((paddr-memory)/PAGE_SZ)*PAGE_SZ;
     slab_t* slab32 = (slab_t*)(mem32+PAGE_SZ-sizeof(slab_t));
