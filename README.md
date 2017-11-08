@@ -25,6 +25,6 @@ We have a restricted pointer model and took inspiration from JAVA semantics whic
 
 3. There is no inbuilt support for an array of objects. An array of references must be malloced which inturn point to allocated objects.
 
-## Evaluation
+## Switch Timing
 
 To make a fair evaluation, we compare execution in 32 bit mode of the program with 64 bit mode of the same program. So, although the memory footprint of the program is below 4GB, we make a switch after recording execution time of 32 bit program and then record execution time of the 64 bit version.
