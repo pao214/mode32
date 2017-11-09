@@ -39,6 +39,29 @@ We allocate a page aligned memory of required size and abstract out a simple int
 
 ## Switch Algorithm
 
+The algorithm has the following minimum requirements
+
+1. The fast path of accessing and updating pointers should not take extra time to execute.
+
+2. Overhead of allocation and deallocation should not be significant in comparison to the original time.
+
+3. Must successfully update the references to reallocated memory for 64 bit pointers.
+
+4. Algorithm must be fast enough not to have heavy latency.
+
+Algorithm is designed keeping these things in mind. The trick is to convert any 32 bit pointer to 64 bit counter part in O(1).
+
+The implementation follows the following steps in sequence
+
+1. Relocate memory.
+
+2. Update stack pointers.
+
+3. Copy objects from old to new memory. Care must be taken to copy pointers correctly.
+
+4. Updates the free list in the new memory.
+
+5. Frees all the old memory which is unnecessary.
 
 
 # Evaluation
