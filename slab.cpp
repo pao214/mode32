@@ -1,61 +1,37 @@
 #include "mode32.h"
 
 /***
-* @param cp type slab allocated
-***/
-void cache_grow(cache_t *cp)
-{
-    uint8_t *mem = buddy_alloc(PAGE_SZ);
-    slab_t *slab = (slab_t *)(mem + PAGE_SZ - sizeof(slab_t));
-    slab->next = slab->prev = slab;
-    slab->free_list = mem;
-    slab->bufcount = 0;
-    slab->loc = NULL;
-    slab->type = cp->type;
-    uint8_t *lastbuf = mem + (cp->size) * ((cp->slab_maxbuf) - 1);
-
-    // Allocate free list with head at start
-    // Lastbuf does not point to NULL
-    for (uint8_t *p = mem; p < lastbuf; p += (cp->size))
-    {
-        *((uint16_t *)p) = (uint16_t)((p - mem) + (cp->size));
-    }
-
-    *((uint16_t *)lastbuf) = PAGE_SZ;
-
-    // Add slab to list
-    __slab_move_to_front(cp, slab);
-}
-
-/***
 ** @field type to be allocated
 ** @return pointer to object
 ***/
-uint8_t *cache_alloc(size_t type)
+uint8_t *cache_alloc(uint64_t type)
 {
     cache_t *cp = &cps[type];
 
     // Cache empty
     if (!(cp->slabs))
     {
-        cache_grow(cp);
+        return cache_alloc(type, 1);
     }
 
+    slab_t *slab = cp->slabs;
+    uint32_t slab_sz = buddy_size((uint8_t *)slab);
+    uint32_t slab_maxbuf = (slab_sz - sizeof(slab_t)) / (cp->size);
+
     // All slabs full
-    if ((cp->slabs->bufcount) == (cp->slab_maxbuf))
+    if ((slab->bufcount) == slab_maxbuf)
     {
-        cache_grow(cp);
+        return cache_alloc(type, 1);
     }
 
     // Remove from free list
-    slab_t *slab = cp->slabs;
     uint8_t *mem = (uint8_t *)slab - PAGE_SZ + sizeof(slab_t);
     uint8_t *buf = slab->free_list;
-    slab->free_list = mem + (*((uint16_t *)buf));
+    slab->free_list = mem + (*((uint32_t *)buf));
     (slab->bufcount)++;
 
     // Front slab must not be full if possible
-    if ((slab->bufcount) == (cp->slab_maxbuf))
+    if ((slab->bufcount) == slab_maxbuf)
     {
         __slab_move_to_back(cp, slab);
     }
@@ -63,10 +39,12 @@ uint8_t *cache_alloc(size_t type)
     return buf;
 }
 
-void cache_grow(cache_t *cp, size_t arr_sz)
+uint8_t *cache_alloc(uint64_t type, uint64_t arr_sz)
 {
-    size_t slab_sz = __nextpow2((cp->size) * (arr_sz) + sizeof(slab_t));
-    assert(slab_sz <= (1 << 32));
+    cache_t *cp = &cps[type];
+    uint64_t slab_sz = __nextpow2((cp->size) * (arr_sz) + sizeof(slab_t));
+    uint64_t slab_maxbuf = (slab_sz - sizeof(slab_t)) / (cp->size);
+    assert(slab_sz <= (1 << 20));
     uint8_t *mem = buddy_alloc(slab_sz);
     slab_t *slab = (slab_t *)(mem + slab_sz - sizeof(slab_t));
     slab->next = slab->prev = slab;
@@ -75,7 +53,7 @@ void cache_grow(cache_t *cp, size_t arr_sz)
     slab->loc = NULL;
     slab->type = cp->type;
     slab->arr_sz = arr_sz;
-    uint8_t *lastbuf = mem + (cp->size) * ((cp->slab_maxbuf) - 1);
+    uint8_t *lastbuf = mem + (cp->size) * (slab_maxbuf - 1);
 
     // Allocate free list with head at start
     // Lastbuf does not point to NULL
@@ -84,25 +62,18 @@ void cache_grow(cache_t *cp, size_t arr_sz)
         *((uint32_t *)p) = (uint32_t)((p - mem) + (cp->size));
     }
 
-    *((uint32_t *)lastbuf) = PAGE_SZ;
+    *((uint32_t *)lastbuf) = slab_sz;
 
     // Add slab to list
     __slab_move_to_front(cp, slab);
-}
-
-uint8_t *cache_alloc(size_t type, size_t arr_sz)
-{
-    cache_t *cp = &cps[type];
-    cache_grow(cp, arr_sz);
-    slab_t *slab = cp->slabs;
 
     // Front slab must not be full if possible
-    if ((slab->bufcount) == (cp->slab_maxbuf))
+    if ((slab->bufcount) == slab_maxbuf)
     {
         __slab_move_to_back(cp, slab);
     }
 
-    return buf;
+    return mem;
 }
 
 /***
@@ -110,28 +81,53 @@ uint8_t *cache_alloc(size_t type, size_t arr_sz)
 ** @param type of object
 ** @param buf to be freed 
 ***/
-void cache_free(size_t type, uint8_t *buf)
+void cache_free(uint64_t type, uint8_t *buf)
 {
     cache_t *cp = &cps[type];
-    uint8_t *mem = memory + ((buf - memory) / PAGE_SZ) * PAGE_SZ;
-    slab_t *slab = (slab_t *)(mem + PAGE_SZ - sizeof(slab_t));
+    uint32_t slab_sz = buddy_size(buf);
+    uint32_t slab_maxbuf = (slab_sz - sizeof(slab_t)) / (cp->size);
+    uint8_t *mem = memory + ((buf - memory) / slab_sz) * slab_sz;
+    slab_t *slab = (slab_t *)(mem + slab_sz - sizeof(slab_t));
 
     // Add buffer to free list
-    *((uint16_t *)buf) = (uint16_t)((slab->free_list) - mem);
-    slab->free_list = buf;
-    (slab->bufcount)--;
+    if ((buf == mem) && (slab->arr_sz))
+    {
+        uint8_t *lastbuf = mem + (cp->size) * ((slab->arr_sz) - 1);
+
+        for (uint8_t *p = mem; p < lastbuf; p += cp->size)
+        {
+            *((uint32_t *)p) = (uint32_t)((p - mem) + (cp->size));
+        }
+
+        *((uint32_t *)lastbuf) = (uint32_t)((slab->free_list) - mem);
+        slab->free_list = mem;
+        slab->bufcount -= slab->arr_sz;
+        slab->arr_sz = 0;
+
+        // Front slab must not be full if possible
+        if ((slab->bufcount) == (slab_maxbuf - (slab->arr_sz)))
+        {
+            __slab_move_to_front(cp, slab);
+        }
+    }
+    else
+    {
+        *((uint32_t *)buf) = (uint32_t)((slab->free_list) - mem);
+        slab->free_list = buf;
+        (slab->bufcount)--;
+
+        // Front slab must not be full if possible
+        if ((slab->bufcount) == (slab_maxbuf - 1))
+        {
+            __slab_move_to_front(cp, slab);
+        }
+    }
 
     // Empty slabs can be freed
     if ((slab->bufcount) == 0)
     {
         __slab_remove(cp, slab);
-        page_free(mem);
-    }
-
-    // Front slab must not be full if possible
-    if ((slab->bufcount) == ((cp->slab_maxbuf) - 1))
-    {
-        __slab_move_to_front(cp, slab);
+        buddy_free(mem);
     }
 }
 
@@ -144,8 +140,9 @@ void cache_destroy(cache_t *cp)
     {
         slab = cp->slabs;
         __slab_remove(cp, slab);
-        mem = ((uint8_t *)slab) - PAGE_SZ + sizeof(slab_t);
-        page_free(mem);
+        uint64_t slab_sz = buddy_size((uint8_t *)slab);
+        mem = ((uint8_t *)slab) - slab_sz + sizeof(slab_t);
+        buddy_free(mem);
     }
 }
 

@@ -1,13 +1,13 @@
 #include "mode32.h"
 
-size_t num_prnts;
+uint32_t num_prnts;
 blprnt_t* prnts;
 
-vnode_t<size_t>** graph;
+vnode_t<uint32_t>** graph;
 
 uint8_t* memory;
 
-size_t num_addrs;
+uint32_t num_addrs;
 uint8_t** addrs;
 
 cache_t* cps;

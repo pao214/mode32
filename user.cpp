@@ -30,7 +30,7 @@ uint32_t ptr32[ARR_SZ];
 ***/
 void usr_init()
 {
-    for (size_t i = 0; i < ARR_SZ; i++)
+    for (uint64_t i = 0; i < ARR_SZ; i++)
     {
         ptr32[i] = (uint32_t)(cache_alloc(0)-memory);
     }

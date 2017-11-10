@@ -10,8 +10,8 @@
 **/
 struct field_t
 {
-    size_t prim_sz;
-    size_t type;
+    uint32_t prim_sz;
+    uint32_t type;
 };
 
 /***
@@ -21,8 +21,8 @@ struct field_t
 ***/
 struct blprnt_t
 {
-    size_t num_bytes32;
-    size_t num_bytes64;
+    uint32_t num_bytes32;
+    uint32_t num_bytes64;
     vnode_t<field_t>* fields;
 };
 
