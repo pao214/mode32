@@ -9,6 +9,7 @@
 #include "vnode.h"
 #include "slab.h"
 #include "memory.h"
+#include "buddy.h"
 
 #define MEM_SZ64 (1 << 20)
 #define MEM_SZ32 (1 << 20)
@@ -36,5 +37,14 @@ void graph_init();
 void usr_init();
 void execute32();
 void execute64();
+
+#define NODE_UNUSED 0
+#define NODE_USED 1
+#define NODE_SPLIT 2
+#define NODE_FULL 3
+
+#define MAX_LVL 8
+#define PG_LVL 12
+#define MEM_LVL 20
 
 #endif

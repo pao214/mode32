@@ -6,22 +6,22 @@
 ***/
 void mem_init()
 {
-    page_init();
-    cps = (cache_t*)malloc(sizeof(cache_t)*num_prnts);
+    buddy_init();
+    cps = (cache_t *)malloc(sizeof(cache_t) * num_prnts);
 
     for (size_t i = 0; i < num_prnts; i++)
     {
         cps[i].type = i;
         cps[i].size = prnts[i].num_bytes32;
-        assert(cps[i].size>=2);
-        assert(cps[i].size<PAGE_SZ/8);
-        cps[i].slab_maxbuf = (PAGE_SZ-sizeof(slab_t))/(cps[i].size);
+        assert(cps[i].size >= 4);
+        assert(cps[i].size < PAGE_SZ / 8);
+        cps[i].slab_maxbuf = (PAGE_SZ - sizeof(slab_t)) / (cps[i].size);
         cps[i].slabs = NULL;
         cps[i].slabs_back = NULL;
     }
 }
 
-cache_t* ncps;
+cache_t *ncps;
 
 /***
 ** Logic to switch from 32 bit mode to 64 bit mode
@@ -34,7 +34,7 @@ cache_t* ncps;
 void swtch()
 {
     // Store old cps
-    ncps = (cache_t*)malloc(sizeof(cache_t)*num_prnts);
+    ncps = (cache_t *)malloc(sizeof(cache_t) * num_prnts);
 
     for (int i = 0; i < num_prnts; i++)
     {
@@ -45,7 +45,7 @@ void swtch()
     for (int i = 0; i < num_prnts; i++)
     {
         cps[i].size = prnts[i].num_bytes64;
-        cps[i].slab_maxbuf = (PAGE_SZ-sizeof(slab_t))/(cps[i].size);
+        cps[i].slab_maxbuf = (PAGE_SZ - sizeof(slab_t)) / (cps[i].size);
         cps[i].slabs = NULL;
         cps[i].slabs_back = NULL;
     }
@@ -87,37 +87,36 @@ void swtch()
 ***/
 void reloc(size_t type)
 {
-    slab_t* slab = ncps[type].slabs;
+    slab_t *slab = ncps[type].slabs;
 
     // Proceed only when not null
     if (slab)
     {
-        slab_t* p = slab;
+        slab_t *p = slab;
 
         // Traverse slabs
         do
         {
             uint8_t *pbase, *pmem, *qmem;
             pbase = cache_alloc(type);
-            pmem = memory+((pbase-memory)/PAGE_SZ)*PAGE_SZ;
+            pmem = memory + ((pbase - memory) / PAGE_SZ) * PAGE_SZ;
             p->loc = pbase;
 
             // Assume serial allocation
             for (int i = 1; i < (ncps[type].slab_maxbuf); i++)
             {
                 pbase = cache_alloc(type);
-                qmem = memory+((pbase-memory)/PAGE_SZ)*PAGE_SZ;
+                qmem = memory + ((pbase - memory) / PAGE_SZ) * PAGE_SZ;
 
                 if (pmem != qmem)
                 {
-                    ((slab_t*)(pmem+PAGE_SZ-sizeof(slab_t)))->loc = qmem;
+                    ((slab_t *)(pmem + PAGE_SZ - sizeof(slab_t)))->loc = qmem;
                     pmem = qmem;
                 }
             }
 
             p = p->next;
-        }
-        while (p != slab);
+        } while (p != slab);
     }
 }
 
@@ -126,42 +125,41 @@ void reloc(size_t type)
 ***/
 void objcpy(size_t type)
 {
-    vnode_t<field_t>* fnode = prnts[type].fields;
+    vnode_t<field_t> *fnode = prnts[type].fields;
     int offset32 = 0;
     int offset64 = 0;
 
     while (fnode)
     {
-        field_t& lfield = fnode->val;
+        field_t &lfield = fnode->val;
 
         // Pointer
         if (!lfield.prim_sz)
         {
-            slab_t* slab = ncps[type].slabs;
+            slab_t *slab = ncps[type].slabs;
 
             if (slab)
             {
-                slab_t* p = slab;
+                slab_t *p = slab;
 
                 do
                 {
-                    uint8_t* mem = ((uint8_t*)p)-PAGE_SZ+sizeof(slab_t);
-                
+                    uint8_t *mem = ((uint8_t *)p) - PAGE_SZ + sizeof(slab_t);
+
                     for (int i = 0; i < (ncps[type].slab_maxbuf); i++)
                     {
-                        uint8_t* pbase = mem+i*(ncps[type].size);
-                        uint8_t* paddr = memory+(*((uint32_t*)(pbase+offset32)));
-                        
+                        uint8_t *pbase = mem + i * (ncps[type].size);
+                        uint8_t *paddr = memory + (*((uint32_t *)(pbase + offset32)));
+
                         if (eqtype(lfield.type, paddr))
                         {
-                            *((uint64_t*)(conv64(type, pbase)+offset64)) = 
-                                conv64(lfield.type, paddr)-memory;
+                            *((uint64_t *)(conv64(type, pbase) + offset64)) =
+                                conv64(lfield.type, paddr) - memory;
                         }
                     }
 
                     p = p->next;
-                }
-                while (p != slab);
+                } while (p != slab);
             }
 
             offset32 += sizeof(uint32_t);
@@ -173,26 +171,25 @@ void objcpy(size_t type)
             size_t ltype = lfield.type;
             assert(prnts[ltype].num_bytes32 == prnts[ltype].num_bytes64);
 
-            slab_t* slab = ncps[type].slabs;
-            
+            slab_t *slab = ncps[type].slabs;
+
             if (slab)
             {
-                slab_t* p = slab;
+                slab_t *p = slab;
 
                 do
                 {
-                    uint8_t* mem = ((uint8_t*)p)-PAGE_SZ+sizeof(slab_t);
-                
+                    uint8_t *mem = ((uint8_t *)p) - PAGE_SZ + sizeof(slab_t);
+
                     for (int i = 0; i < (ncps[type].slab_maxbuf); i++)
                     {
-                        uint8_t* pbase = mem+i*(ncps[type].size);
-                        memcpy(conv64(ltype, pbase)+offset64, 
-                            pbase+offset32, prnts[ltype].num_bytes32);
+                        uint8_t *pbase = mem + i * (ncps[type].size);
+                        memcpy(conv64(ltype, pbase) + offset64,
+                               pbase + offset32, prnts[ltype].num_bytes32);
                     }
 
                     p = p->next;
-                }
-                while (p != slab);
+                } while (p != slab);
             }
 
             offset32 += prnts[ltype].num_bytes32;
@@ -209,33 +206,32 @@ void objcpy(size_t type)
 ***/
 void freebuf(size_t type)
 {
-    slab_t* slab = ncps[type].slabs;
+    slab_t *slab = ncps[type].slabs;
 
     if (slab)
     {
-        slab_t* p = slab;
+        slab_t *p = slab;
 
         // Traverse slabs
         do
         {
-            uint8_t* buf = p->free_list;
-            uint8_t* mem = (uint8_t*)p-PAGE_SZ+sizeof(slab_t);
+            uint8_t *buf = p->free_list;
+            uint8_t *mem = (uint8_t *)p - PAGE_SZ + sizeof(slab_t);
 
             // TODO: Stores list in reverse
-            for (int i = 0; i < ((ncps[i].slab_maxbuf)-(p->bufcount)); i++)
+            for (int i = 0; i < ((ncps[i].slab_maxbuf) - (p->bufcount)); i++)
             {
-                if ((buf-mem)==PAGE_SZ)
+                if ((buf - mem) == PAGE_SZ)
                 {
                     break;
                 }
 
                 cache_free(type, conv64(type, buf));
-                buf = mem+(*(uint16_t*)buf);
+                buf = mem + (*(uint16_t *)buf);
             }
 
             p = p->next;
-        }
-        while (p != slab);
+        } while (p != slab);
     }
 }
 
@@ -245,43 +241,43 @@ void freebuf(size_t type)
 ** @return converted address
 ** Converts only base addresses of objects
 ***/
-uint8_t* conv64(size_t type, uint8_t* paddr)
+uint8_t *conv64(size_t type, uint8_t *paddr)
 {
-    assert(paddr>=memory);
-    assert(paddr<(memory+MEM_SZ64));
+    assert(paddr >= memory);
+    assert(paddr < (memory + MEM_SZ64));
     assert(eqtype(type, paddr));
-    uint8_t* mem32 = memory+((paddr-memory)/PAGE_SZ)*PAGE_SZ;
-    slab_t* slab32 = (slab_t*)(mem32+PAGE_SZ-sizeof(slab_t));
-    assert(!((paddr-mem32)%ncps[type].size));
-    uint8_t* pmem = slab32->loc;
-    uint8_t* mem64 = memory+((pmem-memory)/PAGE_SZ)*PAGE_SZ;
-    slab_t* slab64 = (slab_t*)(mem64+PAGE_SZ-sizeof(slab_t));
-    assert(!((pmem-mem64)%cps[type].size));
+    uint8_t *mem32 = memory + ((paddr - memory) / PAGE_SZ) * PAGE_SZ;
+    slab_t *slab32 = (slab_t *)(mem32 + PAGE_SZ - sizeof(slab_t));
+    assert(!((paddr - mem32) % ncps[type].size));
+    uint8_t *pmem = slab32->loc;
+    uint8_t *mem64 = memory + ((pmem - memory) / PAGE_SZ) * PAGE_SZ;
+    slab_t *slab64 = (slab_t *)(mem64 + PAGE_SZ - sizeof(slab_t));
+    assert(!((pmem - mem64) % cps[type].size));
 
-    size_t idx32 = (paddr-mem32)/(ncps[type].size);
-    size_t rem64 = cps[type].slab_maxbuf-(pmem-mem64)/cps[type].size;
+    size_t idx32 = (paddr - mem32) / (ncps[type].size);
+    size_t rem64 = cps[type].slab_maxbuf - (pmem - mem64) / cps[type].size;
 
     // Search through the list O(1)
-    while (idx32>=rem64)
+    while (idx32 >= rem64)
     {
         idx32 -= rem64;
         pmem = slab64->loc;
-        mem64 = memory+((pmem-memory)/PAGE_SZ)*PAGE_SZ;
-        slab64 = (slab_t*)(mem64+PAGE_SZ-sizeof(slab_t));
+        mem64 = memory + ((pmem - memory) / PAGE_SZ) * PAGE_SZ;
+        slab64 = (slab_t *)(mem64 + PAGE_SZ - sizeof(slab_t));
         rem64 = cps[type].slab_maxbuf;
     }
 
-    return pmem+idx32*cps[type].size;
+    return pmem + idx32 * cps[type].size;
 }
 
-bool eqtype(size_t type, uint8_t* paddr)
+bool eqtype(size_t type, uint8_t *paddr)
 {
-    if ((paddr-memory) == MEM_SZ64)
+    if ((paddr - memory) == MEM_SZ64)
     {
         return false;
     }
 
-    uint8_t* mem = memory+((paddr-memory)/PAGE_SZ)*PAGE_SZ;
-    slab_t* slab = (slab_t*)(mem+PAGE_SZ-sizeof(slab_t));
+    uint8_t *mem = memory + ((paddr - memory) / PAGE_SZ) * PAGE_SZ;
+    slab_t *slab = (slab_t *)(mem + PAGE_SZ - sizeof(slab_t));
     return (slab->type) == type;
 }

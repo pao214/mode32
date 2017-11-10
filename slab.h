@@ -7,18 +7,13 @@
 #define PAGE_SZ (1 << 12)
 
 /***
-** Allocation/free functions at page level
-***/
-uint8_t* page_alloc();
-void page_free(uint8_t* &pg);
-void page_init();
-
-/***
 ** @field next is next element in list
 ** @field prev is previous element in list
 ** @field free_list is head of free objects list
 ** @field bufcount is complement of size of list
 ** @field loc is location of slab in 64 bit mode
+** @field type represents type of objects in slab
+** @field size is array size, 0 otherwise
 ***/
 struct slab_t
 {
@@ -28,6 +23,7 @@ struct slab_t
     size_t bufcount;
     uint8_t* loc;
     size_t type;
+    size_t arr_sz;
 };
 
 /***
