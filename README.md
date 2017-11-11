@@ -73,5 +73,7 @@ The implementation follows the following steps in sequence
 The program is run on simple microbenchmark that just does a linked list traversal. We allocate 2^16 nodes contianing pointers to itself and create a circular linked list out of it. We then traverse the linked list 2^30 times in both 32 bit mode and 64 bit mode and compare the execution times.
 
 32 bit mode: ~7 million cycles
+
 switch: ~10 thousand cycles
+
 64 bit mode: ~10 million cycles
