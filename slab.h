@@ -34,7 +34,6 @@ struct slab_t
 ***/
 struct cache_t
 {
-    uint32_t type;
     uint32_t size;
     slab_t *slabs;
     slab_t *slabs_back;
@@ -43,9 +42,9 @@ struct cache_t
 /***
 ** Allocation/free functions at slab level
 ***/
-uint8_t *cache_alloc(uint64_t type);
-uint8_t *cache_alloc(uint64_t type, uint64_t arr_sz);
-void cache_free(uint64_t type, uint8_t *buf);
+uint8_t *cache_alloc(uint32_t type);
+uint8_t *cache_alloc(uint32_t type, uint32_t arr_sz);
+void cache_free(uint32_t type, uint8_t *buf);
 void cache_grow(cache_t *cp);
 void cache_destroy(cache_t *cp);
 
