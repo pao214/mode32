@@ -24,6 +24,7 @@ struct slab_t
     uint8_t *loc;
     uint32_t type;
     uint32_t arr_sz;
+    uint32_t slab_sz;
 };
 
 /***

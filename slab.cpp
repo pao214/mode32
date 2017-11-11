@@ -60,6 +60,7 @@ uint8_t *cache_alloc(uint32_t type, uint32_t arr_sz)
     slab->loc = NULL;
     slab->type = type;
     slab->arr_sz = arr_sz;
+    slab->slab_sz = slab_sz;
     uint8_t *lastbuf = mem + cp->size * (slab_maxbuf - 1);
 
     // Allocate free list with tail pointed to outside memory

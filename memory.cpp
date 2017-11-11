@@ -92,8 +92,7 @@ void reloc(uint32_t type)
         // Traverse slabs
         do
         {
-            uint32_t slab32_sz = buddy_size((uint8_t *)p);
-            assert(slab32_sz == PAGE_SZ);
+            uint32_t slab32_sz = p->slab_sz;
             uint8_t *mem32 = (uint8_t *)p - slab32_sz + sizeof(slab_t);
             uint32_t slab_maxbuf = (slab32_sz - sizeof(slab_t)) / ncps[type].size;
             uint8_t *mem64 = cache_alloc(type, slab_maxbuf);
@@ -127,8 +126,7 @@ void objcpy(uint32_t type)
 
                 do
                 {
-                    uint32_t slab32_sz = buddy_size((uint8_t *)p);
-                    assert(slab32_sz == PAGE_SZ);
+                    uint32_t slab32_sz = p->slab_sz;
                     uint32_t slab_maxbuf = (slab32_sz - sizeof(slab_t)) / ncps[type].size;
                     uint8_t *mem32 = (uint8_t *)p - slab32_sz + sizeof(slab_t);
 
@@ -160,8 +158,7 @@ void objcpy(uint32_t type)
 
                 do
                 {
-                    uint32_t slab32_sz = buddy_size((uint8_t *)p);
-                    assert(slab32_sz == PAGE_SZ);
+                    uint32_t slab32_sz = p->slab_sz;
                     uint8_t *mem32 = (uint8_t *)p - slab32_sz + sizeof(slab_t);
                     uint32_t slab_maxbuf = (slab32_sz - sizeof(slab_t)) / ncps[type].size;
 
@@ -199,8 +196,7 @@ void freebuf(uint32_t type)
         do
         {
             uint8_t *buf = p->free_list;
-            uint32_t slab32_sz = buddy_size((uint8_t *)p);
-            assert(slab32_sz == PAGE_SZ);
+            uint32_t slab32_sz = p->slab_sz;
             uint32_t slab_maxbuf = (slab32_sz - sizeof(slab_t)) / ncps[type].size;
             uint8_t *mem32 = (uint8_t *)p - slab32_sz + sizeof(slab_t);
 
