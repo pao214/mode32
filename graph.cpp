@@ -2,9 +2,9 @@
 
 void prnt_grph();
 
-/***
-** Constructs a reverse point to graph to help with relocating memory
-***/
+/**
+ * Constructs a reverse point to graph to help with relocating memory 
+**/
 void graph_init()
 {
     graph = (vnode_t<uint32_t>**)malloc(sizeof(vnode_t<uint32_t>*)*num_prnts);
@@ -40,9 +40,9 @@ void graph_init()
     prnt_grph();
 }
 
-/***
-** Debug function that prints graph as a sanity check
-***/
+/**
+ * Debug function that prints graph as a sanity check
+**/
 void prnt_grph()
 {
     for (uint32_t i = 0; i < num_prnts; i++)

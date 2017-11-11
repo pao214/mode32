@@ -179,13 +179,8 @@ uint64_t buddy_size(uint8_t *ptr)
         }
     }
 
-    if (btr[idx] == NODE_UNUSED)
-    {
-        // fprintf(stderr, "idx %lu\n", idx);
-    }
-
     assert(btr[idx] == NODE_USED);
-    // assert(left==off);
+    assert(left <= off && off < left + len);
     return len * PAGE_SZ;
 }
 

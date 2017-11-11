@@ -13,20 +13,20 @@
 
 // Blueprint of structure
 extern uint32_t num_prnts;
-extern blprnt_t* prnts;
+extern blprnt_t *prnts;
 
 // Point to graph
-extern vnode_t<uint32_t>** graph;
+extern vnode_t<uint32_t> **graph;
 
 // Memory mapped
-extern uint8_t* memory;
+extern uint8_t *memory;
 
 // Store pointers on stack
 extern uint32_t num_addrs;
-extern uint8_t** addrs;
+extern uint8_t **addrs;
 
 // Cache pointer
-extern cache_t* cps;
+extern cache_t *cps;
 extern bool swtchd;
 
 void prnts_init();

@@ -20,9 +20,9 @@ struct vnode_t
 ** @return pointer to allocated node
 ***/
 template <typename T>
-vnode_t<T>* vnode_alloc(T& val)
+vnode_t<T> *vnode_alloc(T &val)
 {
-    vnode_t<T>* lvnode = (vnode_t<T>*)malloc(sizeof(vnode_t<T>));
+    vnode_t<T> *lvnode = (vnode_t<T> *)malloc(sizeof(vnode_t<T>));
     lvnode->val = val; // extra copy
     lvnode->next = NULL;
     return lvnode;
@@ -35,7 +35,7 @@ vnode_t<T>* vnode_alloc(T& val)
 ** @return new head of list
 ***/
 template <typename T>
-vnode_t<T>* vnode_insert(vnode_t<T>* lvnode, vnode_t<T>* val)
+vnode_t<T> *vnode_insert(vnode_t<T> *lvnode, vnode_t<T> *val)
 {
     val->next = lvnode;
     return val;
@@ -48,9 +48,9 @@ vnode_t<T>* vnode_insert(vnode_t<T>* lvnode, vnode_t<T>* val)
 ** @return new head of list
 ***/
 template <typename T>
-vnode_t<T>* vnode_insert(vnode_t<T>* lvnode, T& val)
+vnode_t<T> *vnode_insert(vnode_t<T> *lvnode, T &val)
 {
-    vnode_t<T>* tvnode = vnode_alloc<T>(val);
+    vnode_t<T> *tvnode = vnode_alloc<T>(val);
     return vnode_insert(lvnode, tvnode);
 }
 
@@ -61,9 +61,9 @@ vnode_t<T>* vnode_insert(vnode_t<T>* lvnode, T& val)
 ** @return new head of list
 ***/
 template <typename T>
-vnode_t<T>* vnode_distinct_insert(vnode_t<T>* lvnode, T& val)
+vnode_t<T> *vnode_distinct_insert(vnode_t<T> *lvnode, T &val)
 {
-    vnode_t<T>* tvnode;
+    vnode_t<T> *tvnode;
     tvnode = lvnode;
 
     while (tvnode && ((tvnode->val) != val))

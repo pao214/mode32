@@ -18,6 +18,5 @@ void reloc(uint32_t type);
 void objcpy(uint32_t type);
 void freebuf(uint32_t type);
 uint8_t *conv64(uint8_t *paddr);
-bool eqtype(uint32_t type, uint8_t *paddr);
 
 #endif

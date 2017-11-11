@@ -77,6 +77,7 @@ void swtch()
 }
 
 /**
+ * @param type to be relocated
  * Allocates memory for 64 bit objects
  * Maintains a mapping from old to new objects
 ***/
@@ -104,6 +105,7 @@ void reloc(uint32_t type)
 
 /**
  * @param type to copy
+ * Copies primitive types and updates pointers
 **/
 void objcpy(uint32_t type)
 {
@@ -180,10 +182,11 @@ void objcpy(uint32_t type)
     }
 }
 
-/***
-** Frees corresponding buffers
-** Free list reversed
-***/
+/**
+ * @param type to be freed
+ * Frees corresponding buffers
+ * Free list reversed
+**/
 void freebuf(uint32_t type)
 {
     slab_t *slab = ncps[type].slabs;
@@ -212,28 +215,17 @@ void freebuf(uint32_t type)
     }
 }
 
+/**
+ * @param paddr is 32 bit pointer
+ * @return 64 bit pointer a map of paddr
+**/
 uint8_t *conv64(uint8_t *paddr)
 {
+    assert(paddr < memory + MEM_SZ32);
     uint32_t slab32_sz = buddy_size(paddr);
     uint8_t *mem32 = ((paddr - memory) / slab32_sz) * slab32_sz + memory;
     slab_t *slab32 = (slab_t *)(mem32 + slab32_sz - sizeof(slab_t));
     uint32_t idx32 = (paddr - mem32) / ncps[slab32->type].size;
     uint8_t *mem64 = slab32->loc;
     return mem64 + idx32 * cps[slab32->type].size;
-}
-
-bool eqtype(uint32_t type, uint8_t *paddr)
-{
-    assert(paddr >= memory);
-    assert(paddr < memory + MEM_SZ64);
-    uint32_t slab_sz = buddy_size(paddr);
-
-    if (paddr == memory + slab_sz)
-    {
-        return false;
-    }
-
-    uint8_t *mem = ((paddr - memory) / slab_sz) * slab_sz + memory;
-    slab_t *slab = (slab_t *)(mem + slab_sz - sizeof(slab_t));
-    return slab->type == type;
 }
