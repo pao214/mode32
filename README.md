@@ -23,8 +23,6 @@ We have a restricted pointer model and took inspiration from JAVA semantics whic
 
 2. Fields in structures can only have single indirections or need to be a primitive type. More indirections or non-primitive types are not supported as fields but can be implemented using another structure.
 
-3. There is no inbuilt support for an array of objects. An array of references must be malloced which inturn point to allocated objects.
-
 ## Switch Timing
 
 To make a fair evaluation, we compare execution in 32 bit mode of the program with 64 bit mode of the same program. So, although the memory footprint of the program is below 4GB, we make a switch after recording execution time of 32 bit program and then record execution time of the 64 bit version.
@@ -35,7 +33,13 @@ We initialize structures, construct a reverse point to graph, initialize memory,
 
 ## Memory Allocator
 
-We allocate a page aligned memory of required size and abstract out a simple interface to allocate pages. On top of this is an allocator which allocates ojects based on the type. Internally the alocator allocates objects of same type in the same page. We allow object sizes that are more than or equal to 2 bytes and less than one-eigth of page size. Each page contains a free list from which allocations are be served. This memory allocator does not support cotinuous allocations and usage of continuous memory is supported through the usual memory allocators. However malloced memory is allowed to contain references to objects allocated from the memory allocator provided they are instantiated from the custom data type.
+### Buddy Allocator
+
+We allocate a page aligned memory of required size and abstract out an interface to allocate memory through buddy style allocation at the lowest level. Minimum granularity of allocation is page size and allocates contiguous aligned memory in powers of 2 multiples of page size. 
+
+### Slab Allocator
+
+Abstraction layer on top of buddy allocator. Allocates objects based on the type. Internally the alocator allocates objects of same type in the same contiguous memory called slab allocated from buddy allocator. Each slab contains a free list from which object allocations can be served. Arrays can also be allocated using the API.
 
 ## Switch Algorithm
 
@@ -70,4 +74,4 @@ The program is run on simple microbenchmark that just does a linked list travers
 
 32 bit mode: ~7 million cycles
 switch: ~10 thousand cycles
-64 bit mode: ~11 million cycles
+64 bit mode: ~10 million cycles
